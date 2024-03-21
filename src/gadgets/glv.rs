@@ -129,8 +129,8 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         out_buffer.set_bool_target(self.k2_neg, k2_neg);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(

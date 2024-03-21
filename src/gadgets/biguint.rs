@@ -343,8 +343,8 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         out_buffer.set_biguint_target(&self.rem, &rem);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(

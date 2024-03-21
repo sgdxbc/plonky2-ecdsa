@@ -485,8 +485,8 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         out_buffer.set_bool_target(self.overflow, overflow);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(
@@ -552,8 +552,8 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         out_buffer.set_u32_target(self.overflow, overflow);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(
@@ -615,8 +615,8 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         out_buffer.set_bool_target(self.overflow, overflow);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(
@@ -676,8 +676,8 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         out_buffer.set_biguint_target(&self.overflow, &overflow_biguint);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(
@@ -728,8 +728,8 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         out_buffer.set_biguint_target(&self.inv, &inv_biguint);
     }
 
-    fn id(&self) -> String {
-        std::any::type_name::<Self>().into()
+    fn id(&self) -> alloc::string::String {
+        core::any::type_name::<Self>().into()
     }
 
     fn serialize(

@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use plonky2::util::serialization::{Read, Write};
 
 use plonky2::field::extension::Extendable;
 use plonky2::field::secp256k1_base::Secp256K1Base;
@@ -17,6 +18,8 @@ use crate::gadgets::biguint::{GeneratedValuesBigUint, WitnessBigUint};
 use crate::gadgets::curve::{AffinePointTarget, CircuitBuilderCurve};
 use crate::gadgets::curve_msm::curve_msm_circuit;
 use crate::gadgets::nonnative::{CircuitBuilderNonNative, NonNativeTarget};
+
+use super::nonnative::{ReadNonNative, WriteNonNative};
 
 pub trait CircuitBuilderGlv<F: RichField + Extendable<D>, const D: usize> {
     fn secp256k1_glv_beta(&mut self) -> NonNativeTarget<Secp256K1Base>;
@@ -138,7 +141,11 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_nonnative(&self.k)?;
+        dst.write_target_nonnative(&self.k1)?;
+        dst.write_target_nonnative(&self.k2)?;
+        dst.write_target_bool(self.k1_neg)?;
+        dst.write_target_bool(self.k2_neg)
     }
 
     fn deserialize(
@@ -148,7 +155,14 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            k: src.read_target_nonnative()?,
+            k1: src.read_target_nonnative()?,
+            k2: src.read_target_nonnative()?,
+            k1_neg: src.read_target_bool()?,
+            k2_neg: src.read_target_bool()?,
+            _phantom: Default::default(),
+        })
     }
 }
 

@@ -1,6 +1,8 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use plonky2::util::serialization::{Buffer, IoResult, Read, Write};
+use plonky2_u32::serialization::{ReadU32, WriteU32};
 
 use num::{BigUint, Integer, One, Zero};
 use plonky2::field::extension::Extendable;
@@ -18,6 +20,8 @@ use plonky2_u32::witness::GeneratedValuesU32;
 use crate::gadgets::biguint::{
     BigUintTarget, CircuitBuilderBiguint, GeneratedValuesBigUint, WitnessBigUint,
 };
+
+use super::biguint::{ReadBigUint, WriteBigUint};
 
 #[derive(Clone, Debug)]
 pub struct NonNativeTarget<FF: Field> {
@@ -454,6 +458,29 @@ struct NonNativeAdditionGenerator<F: RichField + Extendable<D>, const D: usize, 
     _phantom: PhantomData<F>,
 }
 
+pub trait WriteNonNative {
+    fn write_target_nonnative<FF: Field>(&mut self, target: &NonNativeTarget<FF>) -> IoResult<()>;
+}
+
+impl WriteNonNative for Vec<u8> {
+    fn write_target_nonnative<FF: Field>(&mut self, target: &NonNativeTarget<FF>) -> IoResult<()> {
+        self.write_target_biguint(&target.value)
+    }
+}
+
+pub trait ReadNonNative {
+    fn read_target_nonnative<FF: Field>(&mut self) -> IoResult<NonNativeTarget<FF>>;
+}
+
+impl ReadNonNative for Buffer<'_> {
+    fn read_target_nonnative<FF: Field>(&mut self) -> IoResult<NonNativeTarget<FF>> {
+        Ok(NonNativeTarget {
+            value: self.read_target_biguint()?,
+            _phantom: Default::default(),
+        })
+    }
+}
+
 impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerator<F, D>
     for NonNativeAdditionGenerator<F, D, FF>
 {
@@ -494,7 +521,10 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_nonnative(&self.a)?;
+        dst.write_target_nonnative(&self.b)?;
+        dst.write_target_nonnative(&self.sum)?;
+        dst.write_target_bool(self.overflow)
     }
 
     fn deserialize(
@@ -504,7 +534,13 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            a: src.read_target_nonnative()?,
+            b: src.read_target_nonnative()?,
+            sum: src.read_target_nonnative()?,
+            overflow: src.read_target_bool()?,
+            _phantom: Default::default(),
+        })
     }
 }
 
@@ -561,7 +597,12 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_usize(self.summands.len())?;
+        for summand in &self.summands {
+            dst.write_target_nonnative(summand)?
+        }
+        dst.write_target_nonnative(&self.sum)?;
+        dst.write_target_u32(self.overflow)
     }
 
     fn deserialize(
@@ -571,7 +612,15 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
     where
         Self: Sized,
     {
-        todo!()
+        let len = src.read_usize()?;
+        Ok(Self {
+            summands: (0..len)
+                .map(|_| src.read_target_nonnative())
+                .collect::<Result<_, _>>()?,
+            sum: src.read_target_nonnative()?,
+            overflow: src.read_target_u32()?,
+            _phantom: Default::default(),
+        })
     }
 }
 
@@ -624,7 +673,10 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_nonnative(&self.a)?;
+        dst.write_target_nonnative(&self.b)?;
+        dst.write_target_nonnative(&self.diff)?;
+        dst.write_target_bool(self.overflow)
     }
 
     fn deserialize(
@@ -634,7 +686,13 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            a: src.read_target_nonnative()?,
+            b: src.read_target_nonnative()?,
+            diff: src.read_target_nonnative()?,
+            overflow: src.read_target_bool()?,
+            _phantom: Default::default(),
+        })
     }
 }
 
@@ -685,7 +743,10 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_nonnative(&self.a)?;
+        dst.write_target_nonnative(&self.b)?;
+        dst.write_target_nonnative(&self.prod)?;
+        dst.write_target_biguint(&self.overflow)
     }
 
     fn deserialize(
@@ -695,7 +756,13 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            a: src.read_target_nonnative()?,
+            b: src.read_target_nonnative()?,
+            prod: src.read_target_nonnative()?,
+            overflow: src.read_target_biguint()?,
+            _phantom: Default::default(),
+        })
     }
 }
 
@@ -737,7 +804,9 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_nonnative(&self.x)?;
+        dst.write_target_biguint(&self.inv)?;
+        dst.write_target_biguint(&self.div)
     }
 
     fn deserialize(
@@ -747,7 +816,12 @@ impl<F: RichField + Extendable<D>, const D: usize, FF: PrimeField> SimpleGenerat
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            x: src.read_target_nonnative()?,
+            inv: src.read_target_biguint()?,
+            div: src.read_target_biguint()?,
+            _phantom: Default::default(),
+        })
     }
 }
 

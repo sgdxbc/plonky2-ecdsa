@@ -1,6 +1,8 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use plonky2::util::serialization::{Buffer, IoResult, Read as _, Write};
+use plonky2_u32::serialization::{ReadU32, WriteU32};
 
 use num::{BigUint, Integer, Zero};
 use plonky2::field::extension::Extendable;
@@ -322,6 +324,34 @@ struct BigUintDivRemGenerator<F: RichField + Extendable<D>, const D: usize> {
     _phantom: PhantomData<F>,
 }
 
+pub trait WriteBigUint {
+    fn write_target_biguint(&mut self, target: &BigUintTarget) -> IoResult<()>;
+}
+
+impl WriteBigUint for Vec<u8> {
+    fn write_target_biguint(&mut self, target: &BigUintTarget) -> IoResult<()> {
+        self.write_usize(target.num_limbs())?;
+        for limb in &target.limbs {
+            self.write_target_u32(*limb)?
+        }
+        Ok(())
+    }
+}
+
+pub trait ReadBigUint {
+    fn read_target_biguint(&mut self) -> IoResult<BigUintTarget>;
+}
+
+impl ReadBigUint for Buffer<'_> {
+    fn read_target_biguint(&mut self) -> IoResult<BigUintTarget> {
+        let num_limb = self.read_usize()?;
+        let limbs = (0..num_limb)
+            .map(|_| self.read_target_u32())
+            .collect::<Result<_, _>>()?;
+        Ok(BigUintTarget { limbs })
+    }
+}
+
 impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
     for BigUintDivRemGenerator<F, D>
 {
@@ -352,7 +382,11 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         dst: &mut Vec<u8>,
         common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
     ) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_target_biguint(&self.a)?;
+        dst.write_target_biguint(&self.b)?;
+        dst.write_target_biguint(&self.div)?;
+        dst.write_target_biguint(&self.rem)?;
+        Ok(())
     }
 
     fn deserialize(
@@ -362,7 +396,13 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
     where
         Self: Sized,
     {
-        todo!()
+        Ok(Self {
+            a: src.read_target_biguint()?,
+            b: src.read_target_biguint()?,
+            div: src.read_target_biguint()?,
+            rem: src.read_target_biguint()?,
+            _phantom: Default::default(),
+        })
     }
 }
 
